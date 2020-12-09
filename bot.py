@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 message_num = 0
 rooms = {}
 ids = []
+is_player = {}
+bot = telegram.Bot(config.TOKEN)
 admins = {}
 
 
@@ -42,14 +44,19 @@ def help(update, context):
         'Дунаев лох.')
 
 
-def create(bot: telegram.Bot, update: telegram.Update, context):
+def create(update: telegram.Update, context):
+    message = update.message
+    if (message.chat_id in is_player) and is_player[message.chat_id]:
+        message.reply_text("Вы не можете создать новую комнату, находясь уже в комнате")
+        return
     room = generate_id(LEN)
     while room in ids:
         room = generate_id(LEN)
     ids.append(room)
-    admins[room] = (update.message.chat_id, update.message.from_user.username)
+    admins[room] = (message.chat_id, message.from_user.username)
     rooms[room] = []
-    rooms[room].append((update.message.chat_id, update.message.from_user.username))
+    rooms[room].append((message.chat_id, message.from_user.username))
+    is_player[message.chat_id] = True
     bot.send_message(update.message.chat_id, "Айди вашей комнаты: " + room)
 
 
@@ -58,7 +65,15 @@ def join(update, context):
 
 
 def leave(update, context):
-    pass
+    message = update.message
+    is_player[message.chat_id] = False
+    for room in rooms:
+        if (message.chat_id, message.from_user.username) in rooms[room]:
+            id = rooms[room].index((message.chat_id, message.from_user.username))
+            rooms[room].pop(id)
+            message.reply_text("Вы успешно вышли из комнаты")
+            return
+    message.reply_text("Вы еще не вошли в игру")
 
 
 def answer(update, context):
@@ -79,13 +94,13 @@ def main():
     updater = Updater(config.TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("help", help))
-    bot = telegram.Bot(config.TOKEN)
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("create", create))
+    dp.add_handler(CommandHandler("leave", leave))
     dp.add_error_handler(error)
     '''
     if config.HEROKU_APP_NAME is None:
         # Start the Bot
-
-
         # Run the bot until you press Ctrl-C or the process receives SIGINT,
         #  SIGTERM or SIGABRT. This should be used most of the time, since
         # start_polling() is non-blocking and will stop the bot gracefully.
