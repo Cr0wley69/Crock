@@ -61,7 +61,11 @@ def create(update: telegram.Update, context):
 
 
 def join(update, context):
-    pass
+    msg: telegram.Message = update.message
+    room = msg.text.split()[1]
+    is_player[msg.chat_id] = True
+    rooms[room].append((msg.chat_id, msg.from_user.username))
+    msg.reply_text("Вы успешно вошли в комнату!")
 
 
 def leave(update, context):
@@ -70,7 +74,15 @@ def leave(update, context):
     for room in rooms:
         if (message.chat_id, message.from_user.username) in rooms[room]:
             id = rooms[room].index((message.chat_id, message.from_user.username))
-            rooms[room].pop(id)
+            if admins[room] == (message.chat_id, message.from_user.username):
+                for user in rooms[room]:
+                    if (message.chat_id, message.from_user.username) == user:
+                        continue
+                    is_player[user[0]] = False
+                    bot.send_message(user[0], "Комната, в которой вы играли, была закрыта")
+                rooms.pop(room)
+            else:
+                rooms[room].pop(id)
             message.reply_text("Вы успешно вышли из комнаты")
             return
     message.reply_text("Вы еще не вошли в игру")
@@ -97,6 +109,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("create", create))
     dp.add_handler(CommandHandler("leave", leave))
+    dp.add_handler(CommandHandler("join", join))
     dp.add_error_handler(error)
     '''
     if config.HEROKU_APP_NAME is None:
