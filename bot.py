@@ -110,6 +110,7 @@ def answer(update, context):
                 bot.send_message(player[0], "Слово было угадано. Админ решит судьбу этой комнаты")
         is_started[room] = False
 
+
 def Start(update, context):
     msg: telegram.Message = update.message
     room = is_player[msg.chat_id][1]
