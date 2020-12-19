@@ -1,48 +1,63 @@
 import sys
 
 from PyQt5 import uic, QtGui, QtCore
-from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QComboBox, QLabel, QLineEdit
+from PyQt5.QtGui import QPalette, QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QComboBox, QLabel, QLineEdit, QColorDialog, QDialog
+
+
+class Menu(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('menu.ui', self)
+        self.Start.clicked.connect(self.openDialog)
+
+    def openDialog(self):
+        self.w1 = MyWidget()
+        self.w1.show()
 
 
 class MyWidget(QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi('gameplayDesign.ui', self)
+        uic.loadUi('design.ui', self)
         self._im = QtGui.QImage(self.width(), self.height(), QtGui.QImage.Format_ARGB32)
-        self._im.fill(QtGui.QColor("white"))
-        self.color = (0, 0, 0)
+        self.white()
+        self.color = "#000000"
 
-        self.wht.setStyleSheet("QPushButton {background-color: white; border-style: outset; border-width: 2px; "
-                          "border-radius: 15px; border-color: black;padding: 4px;}")
-        self.wht.clicked.connect(self.white)
-        self.blc.setStyleSheet("QPushButton {background-color: black; border-style: outset; border-width: 2px; "
+        self.clr.setStyleSheet("QPushButton {background-color: black; border-style: outset; border-width: 2px; "
                                "border-radius: 15px; border-color: black;padding: 4px;}")
-        self.blc.clicked.connect(self.black)
-        self.pen_size = 5
+        self.pen_size = 1
         self.size_text.setText('Размер ручки')
-        self.combo.addItems(["1", "2", "3", "4"])
 
         self.mistery = "Дунаев"
-        self.combo.activated.connect(self.change_size)
-        self.sendButton.clicked.connect(self.check)
+        self.horizontalSlider.valueChanged.connect(self.change_size)
+        self.clr.clicked.connect(self.openColorDialog)
+        self.Clear.clicked.connect(self.clear)
+        self.l_x = -1
+        self.l_y = -1
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
         super().mouseReleaseEvent(event)
-        if 160 <= event.x() <= 120 + 601 and 60 <= event.y() <= 380:
+        if self.frame.geometry().x() <= event.x() <= self.frame.geometry().x() + self.frame.frameGeometry().width() and self.frame.geometry().y() <= event.y() <= self.frame.geometry().y() + self.frame.frameGeometry().height():
             painter = QtGui.QPainter(self._im)
-            painter.setPen(QtGui.QPen(QtGui.QColor(*self.color), 1, QtCore.Qt.SolidLine, QtCore.Qt.RoundCap))
-            painter.setBrush(QtGui.QBrush(QtGui.QColor(*self.color), QtCore.Qt.SolidPattern))
-            painter.drawEllipse(event.pos(), self.pen_size, self.pen_size)
-
+            painter.setPen(QtGui.QPen(QtGui.QColor(self.color), self.pen_size, QtCore.Qt.SolidLine, QtCore.Qt.RoundCap))
+            painter.setBrush(QtGui.QBrush(QtGui.QColor(self.color), QtCore.Qt.SolidPattern))
+            painter.drawEllipse(event.pos(), 1, 1)
+            self.l_x = -1
+            self.l_y = -1
             self.update()
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
-        if 160 <= event.x() <= 120 + 601 and 60 <= event.y() <= 380:
+        if self.frame.geometry().x() <= event.x() <= self.frame.geometry().x() + self.frame.frameGeometry().width() and self.frame.geometry().y() <= event.y() <= self.frame.geometry().y() + self.frame.frameGeometry().height():
+            if self.l_x == -1 and self.l_y == -1:
+                self.l_x = event.x()
+                self.l_y = event.y()
             painter = QtGui.QPainter(self._im)
-            painter.setPen(QtGui.QPen(QtGui.QColor(*self.color), 1, QtCore.Qt.SolidLine, QtCore.Qt.RoundCap))
-            painter.setBrush(QtGui.QBrush(QtGui.QColor(*self.color), QtCore.Qt.SolidPattern))
-            painter.drawEllipse(event.pos(), self.pen_size, self.pen_size)
+            painter.setPen(QtGui.QPen(QtGui.QColor(self.color), self.pen_size, QtCore.Qt.SolidLine, QtCore.Qt.RoundCap))
+            painter.setBrush(QtGui.QBrush(QtGui.QColor(self.color), QtCore.Qt.SolidPattern))
+            painter.drawLine(self.l_x, self.l_y, event.x(), event.y())
+            self.l_x = event.x()
+            self.l_y = event.y()
             self.update()
             pass
 
@@ -61,16 +76,31 @@ class MyWidget(QMainWindow):
         self.color = (0, 0, 0)
 
     def change_size(self):
-        self.pen_size = int(self.combo.currentText()) * 5
+        self.pen_size = int(self.horizontalSlider.value())
 
-    def check(self):
-        self.Answer.setText("Ваш Ответ Верен")
-        if self.TextToSend.text() == self.mistery:
-            self.Answer.setText("Ваш Ответ Верен")
-        else:
-            self.Answer.setText("Ваш Ответ Неверен")
-        self.TextToSend.setText("")
+    def openColorDialog(self):
+        color = QColorDialog.getColor()
 
+        if color.isValid():
+            self.color = color.name()
+            command = "QPushButton {background-color:" + self.color + "; border-style: outset; border-width: 2px; " \
+                                                                      "border-radius: 15px; border-color: " \
+                                                                      "black;padding: 4px;} "
+            self.clr.setStyleSheet(command)
+
+    def clear(self):
+        rect = self.frame.frameRect()
+        x = rect.getRect()[0] + self.frame.geometry().x()
+        y = rect.getRect()[1] + self.frame.geometry().y()
+        w = rect.getRect()[2]
+        h = rect.getRect()[3]
+        painter = QtGui.QPainter(self._im)
+        painter.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255), 4, QtCore.Qt.SolidLine, QtCore.Qt.RoundCap))
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(255, 255, 255), QtCore.Qt.SolidPattern))
+        painter.drawRect(x, y, w, h)
+        print(x, y, w, h)
+        self.update()
+        pass
 
 
 if __name__ == '__main__':
