@@ -8,21 +8,20 @@ import random
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-LEN = 10
+LEN = 10  # длина id комнаты
 logger = logging.getLogger(__name__)
-rooms = {}
-ids = []
-is_player = {}
-guessers = {}
+rooms = {}  # список комнат
+ids = []  # список айдишников комнат
+is_player = {}  # список игроков
+guessers = {}  # список ведущих
 bot = telegram.Bot(config.TOKEN)
-admins = {}
-words = ["дунаев", "лох", "паша", "тоже", "дамир", "извращенец"]
-keywords = {}
-is_started = {}
+admins = {}  # список админов
+words = ["дунаев", "лох", "паша", "тоже", "дамир", "извращенец"]  # слова
+keywords = {}  # загаданные слова
+is_started = {}  # начатые игры
 
 
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
+# генератор id комнаты
 def generate_id(m):
     s = ""
     for i in range(m):
@@ -37,11 +36,13 @@ def generate_id(m):
     return s
 
 
+# команда /start
 def start(update: telegram.Update, context):
     """Send a message when the command /start is issued."""
     update.message.reply_text('Hi! Используйте команду /help, чтобы узнать мои команды.')
 
 
+# команда /help
 def help(update, context):
     update.message.reply_text(
         'Дунаев лох.\n\
@@ -55,6 +56,7 @@ def help(update, context):
         ')
 
 
+# команда /create
 def create(update: telegram.Update, context):
     message = update.message
     con = sqlite3.connect("crocodile.db")
@@ -79,6 +81,7 @@ def create(update: telegram.Update, context):
     bot.send_message(update.message.chat_id, "Айди вашей комнаты: " + room)
 
 
+# команда /reg
 def reg(update, context):
     msg = update.message
     con = sqlite3.connect("crocodile.db")
@@ -94,6 +97,7 @@ def reg(update, context):
     msg.reply_text("Вы успешно зарегистрировались!")
 
 
+# команда /join
 def join(update, context):
     msg: telegram.Message = update.message
     try:
@@ -115,6 +119,7 @@ def join(update, context):
         msg.reply_text("Произошла ошибка. Скорее всего вы неверно ввели номер комнаты")
 
 
+# команда /leave
 def leave(update, context):
     message = update.message
     is_player[message.chat_id] = (False, "")
@@ -135,6 +140,7 @@ def leave(update, context):
     message.reply_text("Вы еще не вошли в игру")
 
 
+# команда /answer
 def answer(update, context):
     msg: telegram.Message = update.message
     con = sqlite3.connect("crocodile.db")
@@ -166,6 +172,7 @@ def answer(update, context):
         msg.reply_text("Произошла ошибка. Скорее всего вы не ответ.")
 
 
+# команда /start_game
 def Start(update, context):
     msg: telegram.Message = update.message
     con = sqlite3.connect("crocodile.db")
@@ -196,6 +203,7 @@ def Start(update, context):
     print(players)
 
 
+# команда /stats
 def stats(update, context):
     msg: telegram.Message = update.message
     con = sqlite3.connect("crocodile.db")
@@ -211,6 +219,7 @@ def stats(update, context):
     msg.reply_text(message)
 
 
+# вывод ошибок в консоль
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
@@ -220,6 +229,7 @@ def main():
     """Start the bot."""
     updater = Updater(config.TOKEN, use_context=True)
     dp = updater.dispatcher
+    # подключаем команды
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("start_game", Start))
@@ -230,6 +240,7 @@ def main():
     dp.add_handler(CommandHandler("join", join))
     dp.add_handler(CommandHandler("answer", answer))
     dp.add_error_handler(error)
+    # запускаем бота
     updater.start_polling()
     updater.idle()
 
