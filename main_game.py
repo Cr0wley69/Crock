@@ -10,7 +10,6 @@ class MyWidget(QMainWindow):
         super().__init__()
         uic.loadUi('design.ui', self)
         self._im = QtGui.QImage(self.width(), self.height(), QtGui.QImage.Format_ARGB32)
-        self.white()
         self.color = "#000000" # цвет ручки
 
         self.clr.setStyleSheet("QPushButton {background-color: black; border-style: outset; border-width: 2px; "
@@ -56,11 +55,11 @@ class MyWidget(QMainWindow):
         super().paintEvent(event)
         painter = QtGui.QPainter(self)
         painter.drawImage(0, 0, self._im)
-https://github.com/Cr0wley69/Crock/blob/main/main_game.py
+
     def change_size(self):              # изменение размера ручки
         self.pen_size = int(self.horizontalSlider.value())
 
-    def openColorDialog(self):           # диалоговое окно для изменения цвета
+    def openColorDialog(self):           # диалоговое окно для изменения цветаhttps://github.com/Cr0wley69/Crock/blob/main/main_game.py
         color = QColorDialog.getColor()
 
         if color.isValid():
@@ -90,3 +89,4 @@ if __name__ == '__main__':
     ex = MyWidget()
     ex.show()
     sys.exit(app.exec_())
+
